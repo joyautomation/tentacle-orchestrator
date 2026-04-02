@@ -1,0 +1,6 @@
+# Services to start in dev mode.
+# Comment out lines to disable services you don't need.
+services:
+  - tentacle-orchestrator
+  - tentacle-graphql
+  - tentacle-web

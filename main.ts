@@ -12,6 +12,7 @@ import { connectToNats, publishHeartbeat } from "./nats/client.ts";
 import { createNatsLogger } from "./nats/log.ts";
 import { runMigration } from "./reconciler/migration.ts";
 import { startReconciler } from "./reconciler/reconciler.ts";
+import { startCommandListener } from "./nats/listener.ts";
 
 let log = createLogger("orchestrator", LogLevel.info);
 
@@ -55,6 +56,9 @@ async function main() {
     }, 10000);
     log.info("Service heartbeat started (moduleId: orchestrator)");
 
+    // Start command listener (request/reply for registry, internet check, versions)
+    const commandListener = startCommandListener(nats.nc, config, log);
+
     // Start the reconciliation loop
     const reconciler = startReconciler({
       desiredServicesKv: nats.desiredServicesKv,
@@ -67,6 +71,7 @@ async function main() {
     // Shutdown handler
     const shutdown = async () => {
       log.info("Shutting down...");
+      commandListener.stop();
       reconciler.stop();
       clearInterval(heartbeatInterval);
       await nats.nc.close();
